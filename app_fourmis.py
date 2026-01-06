@@ -2,7 +2,6 @@ import flet as ft
 import random
 import math
 
-
 def main(page : ft.Page) :
     page.title = "algo ants"
     page.theme_mode = ft.ThemeMode.LIGHT
