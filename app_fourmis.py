@@ -15,7 +15,24 @@ def main(page : ft.Page) :
     zgraph = ft.Container(width = 600, height = 500, bgcolor = "lightblue", border = ft.border.all(2, "blue"))
     titre2 = ft.Text("Paramètres de l'algorithme", size = 24, weight = "bold")
     statut = ft.Text("Prêt à démarrer", size = 16, color = "green")
-
+    
+    def calculer_distances():
+    #Calcule la matrice des distances entre tous les nœuds
+        distances = []
+        for i in range(len(nodes)):
+            row = []
+            for j in range(len(nodes)):
+                if i == j:
+                    row.append(0)
+                else:
+                    # Distance euclidienne
+                    dx = nodes[i][0] - nodes[j][0]
+                    dy = nodes[i][1] - nodes[j][1]
+                    distance = math.sqrt(dx * dx + dy * dy)
+                    row.append(distance)
+            distances.append(row)
+        return distances
+    
     def generer_nodes() :
         nonlocal nodes
         try :
@@ -27,6 +44,9 @@ def main(page : ft.Page) :
             x = random.uniform(50, 550)
             y = random.uniform(50, 450)
             nodes.append((x,y))
+        distances = calculer_distances()
+        print(f"{len(nodes)} nœuds générés")
+        print(f"Distance entre nœud 0 et 1 : {distances[0][1]:.2f}")
         dessiner_graphe()
 
         
