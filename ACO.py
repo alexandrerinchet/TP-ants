@@ -167,7 +167,7 @@ class AntColony:
         chemins_tries = sorted(tous_les_chemins, key=lambda x: x[1])
         
         # Déposer des phéromones sur les n_best meilleurs chemins
-        for chemin, distance in chemins_tries[:self.n_meilleurs]:
+        for chemin, distance in chemins_tries[:self.n_meille]:
             for i in range(len(chemin) - 1):
                 ville1, ville2 = chemin[i], chemin[i+1]
                 # La quantité de phéromones est inversement proportionnelle à la distance
