@@ -34,22 +34,25 @@ class AntColony:
 
     def run(self, callback_maj, evenement_arret):
         """
-        Exécute l'algorithme d'optimisation par colonie de fourmis.
-
-        Paramètres
-        ----------
-        callback_maj : callable
-            Une fonction de callback à appeler après chaque itération.
-            La fonction doit prendre trois paramètres : l'itération actuelle,
-            le meilleur chemin trouvé jusqu'à présent, et la matrice des phéromones.
-        evenement_arret : threading.Event
-            Un événement à définir pour arrêter l'algorithme.
-
-        Retourne
-        -------
-        None
+        Exécute l'algorithme complet.
+        
+        Paramètres :
+        - callback_maj : fonction de callback appelée après chaque itération
+        - evenement_arret : threading.Event pour arrêter l'algorithme
         """
-        pass
+        for iteration in range(self.n_iterations):
+            # Vérifier si l'arrêt a été demandé
+            if evenement_arret.is_set():
+                break
+            
+            # Exécuter une itération
+            chemin_courant, distance_courante = self.executer_iteration()
+            
+            # Appeler le callback de mise à jour
+            callback_maj(iteration, chemin_courant, self.pheromones)
+            
+            # Petite pause pour permettre la mise à jour de l'interface
+            time.sleep(0.1)
 
     def calculer_distance_chemin(self, chemin):
         """
@@ -81,7 +84,17 @@ class AntColony:
         list
             Une liste de tuples, où chaque tuple contient un chemin et sa distance totale.
         """
-        pass
+        # Commencer par une ville aléatoire
+        chemin = [random.randint(0, len(self.distances) - 1)]
+        
+        # Ajouter les autres villes
+        while len(chemin) < len(self.distances):
+            prochaines_probas = self.calculer_probabilites_mouvement(chemin)
+            prochaine_ville = self.choisir_ville_suivante(prochaines_probas)
+            chemin.append(prochaine_ville)
+        
+        return (chemin, self.calculer_distance_chemin(chemin))
+        
 
     def calculer_probabilites_mouvement(self, chemin):
         """
@@ -97,7 +110,19 @@ class AntColony:
         list
             Une liste de probabilités, où chaque probabilité est la probabilité de se déplacer vers chaque ville étant donné le chemin actuel.
         """
-        pass
+        proba = []
+        ville_act = chemin[-1]
+        for ville in self.tous_indices :
+            if ville in chemin :
+                proba.append(0)
+            else :
+                proba.append(self.pheromones[ville_act][ville]**self.alpha*(1/self.distances[ville_act][ville])**self.beta)
+        tot = sum(proba)
+        if tot > 0 :
+            return [p/tot for p in proba]
+        else :
+            return [0 for _ in range(len(proba))]
+
 
     def choisir_ville_suivante(self, probabilites):
         """
@@ -113,9 +138,19 @@ class AntColony:
         int
             L'indice de la ville choisie comme prochaine ville.
         """
-        pass
+        barre = random.random()
+        compt = 0
+        i = 0
+        while barre > compt :
+            if i == len(probabilites) :
+                return len(probabilites) - 1
+            else :
+                compt += probabilites[i]
+                i += 1
+        return i - 1
+            
 
-    def deposer_pheromones(self, tous_chemins):
+    def deposer_pheromones(self, tous_les_chemins):
         """
         Dépose des phéromones sur les meilleurs chemins.
 
@@ -128,7 +163,45 @@ class AntColony:
         -------
         None
         """
-        pass
+        # Trier les chemins par distance (du meilleur au pire)
+        chemins_tries = sorted(tous_les_chemins, key=lambda x: x[1])
+        
+        # Déposer des phéromones sur les n_best meilleurs chemins
+        for chemin, distance in chemins_tries[:self.n_meilleurs]:
+            for i in range(len(chemin) - 1):
+                ville1, ville2 = chemin[i], chemin[i+1]
+                # La quantité de phéromones est inversement proportionnelle à la distance
+                self.pheromones[ville1][ville2] += 1.0 / distance
+    
+
+    def evaporer_pheromones(self) :
+        phero = len(self.pheromones)
+        for i in range(phero) :
+            for j in range(phero) :
+                self.pheromones[i][j] *= self.decroissance
+    
+    def executer_iteration(self) :
+        # Générer les chemins pour toutes les fourmis
+        tous_les_chemins = []
+        for _ in range(self.n_fourmis):
+            tous_les_chemins.append(self.generer_tous_chemins())
+        
+        # Trouver le meilleur chemin de cette itération
+        meilleur_chemin_iteration = min(tous_les_chemins, key=lambda x: x[1])
+        
+        # Mettre à jour le meilleur chemin global
+        if meilleur_chemin_iteration[1] < self.meilleure_distance:
+            self.meilleur_chemin = meilleur_chemin_iteration[0]
+            self.meilleure_distance = meilleur_chemin_iteration[1]
+        
+        # Déposer et évaporer les phéromones
+        self.deposer_pheromones(tous_les_chemins)
+        self.evaporer_pheromones()
+        
+        return meilleur_chemin_iteration
+
+
+
 
 if __name__ == "__main__":
     distances = [
